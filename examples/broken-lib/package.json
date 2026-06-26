@@ -1,0 +1,11 @@
+{
+  "name": "@example/broken-lib",
+  "version": "0.1.0",
+  "description": "An intentionally broken package — declares an entry that does not exist.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  }
+}

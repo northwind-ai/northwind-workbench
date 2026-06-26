@@ -1,0 +1,10 @@
+{
+  "name": "simple-pkg",
+  "version": "1.2.3",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "echo build",
+    "test": "echo test"
+  }
+}

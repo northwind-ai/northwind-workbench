@@ -1,0 +1,25 @@
+{
+  "name": "@package-workbench/cli",
+  "version": "0.0.1",
+  "description": "Command-line runner for Package Workbench. Same engine as the desktop app.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "package-workbench": "./dist/index.js",
+    "pw": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@package-workbench/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsup": "^8.1.0",
+    "tsx": "^4.15.0",
+    "typescript": "^5.4.5"
+  }
+}

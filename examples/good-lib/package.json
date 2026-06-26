@@ -1,0 +1,14 @@
+{
+  "name": "@example/good-lib",
+  "version": "1.0.0",
+  "description": "A healthy example package — all entries resolve, smoke scenario passes.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

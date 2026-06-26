@@ -1,0 +1,8 @@
+{
+  "name": "@fixture/beta",
+  "version": "2.0.0",
+  "main": "index.js",
+  "peerDependencies": {
+    "@fixture/alpha": "^1.0.0"
+  }
+}

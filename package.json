@@ -1,0 +1,26 @@
+{
+  "name": "package-workbench",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Desktop app for verifying that JS/TS packages actually work — not just compile.",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@9.1.0",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @package-workbench/desktop dev",
+    "build": "pnpm -r --filter \"./packages/*\" build",
+    "typecheck": "pnpm -r typecheck",
+    "cli": "pnpm --filter @package-workbench/cli start --",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.3.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
