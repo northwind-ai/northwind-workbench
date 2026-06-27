@@ -1,0 +1,75 @@
+# Example GitHub Actions workflow for Package Workbench.
+# Copy to .github/workflows/package-workbench.yml in your repo.
+#
+# It scans the repo, runs checks + scenarios, gates the build on regressions
+# (non-zero exit), uploads an HTML report artifact, and comments the summary on PRs.
+# Run history is cached per-branch so each run compares against the last baseline.
+
+name: Package Workbench
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  workbench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so branch/commit metadata is available
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Restore the per-branch baseline so "compare against last run" works.
+      - name: Restore Workbench history
+        uses: actions/cache@v4
+        with:
+          path: .package-workbench/history
+          key: workbench-history-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            workbench-history-${{ github.ref_name }}-
+
+      # CI gate — exits non-zero on a policy violation (score drop, critical
+      # failure, new cycle, new boundary violation, scenario regression).
+      - name: Package Workbench CI
+        run: npx package-workbench ci . --scenarios
+
+      # Always produce a report, even if the gate failed.
+      - name: Generate report
+        if: always()
+        run: |
+          npx package-workbench report . --format html --out workbench-report.html
+          npx package-workbench report . --format markdown --out workbench-report.md
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workbench-report
+          path: workbench-report.html
+
+      - name: Comment report on PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('workbench-report.md', 'utf8').slice(0, 60000);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 📦 Package Workbench\n\n${body}`,
+            });

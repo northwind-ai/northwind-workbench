@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import type { WorkbenchApi } from '../shared/ipc';
+import type { WorkbenchApi } from "../shared/ipc";
 
 declare global {
   interface Window {

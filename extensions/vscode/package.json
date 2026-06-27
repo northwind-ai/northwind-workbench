@@ -1,0 +1,82 @@
+{
+  "name": "package-workbench-vscode",
+  "displayName": "Package Workbench",
+  "description": "Bring Package Workbench insights — health, dependency graph, diagnostics, and safe auto-fixes — directly into VS Code.",
+  "version": "0.1.0",
+  "publisher": "package-workbench",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Linters", "Programming Languages", "Other"],
+  "main": "./dist/extension.js",
+  "activationEvents": ["workspaceContains:**/package.json"],
+  "contributes": {
+    "commands": [
+      { "command": "packageWorkbench.analyzeWorkspace", "title": "Package Workbench: Analyze Workspace", "icon": "$(refresh)" },
+      { "command": "packageWorkbench.analyzeCurrentPackage", "title": "Package Workbench: Analyze Current Package" },
+      { "command": "packageWorkbench.openDesktop", "title": "Package Workbench: Open Desktop App" },
+      { "command": "packageWorkbench.openPackageInDesktop", "title": "Package Workbench: Open Selected Package in Desktop App" },
+      { "command": "packageWorkbench.explainFailure", "title": "Package Workbench: Explain Failure" },
+      { "command": "packageWorkbench.applySafeFix", "title": "Package Workbench: Apply Safe Fix" },
+      { "command": "packageWorkbench.askChat", "title": "Package Workbench: Ask About This Repo (Chat)" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "package-workbench", "title": "Package Workbench", "icon": "media/icon.svg" }
+      ]
+    },
+    "views": {
+      "package-workbench": [
+        { "id": "pwOverview", "name": "Overview" },
+        { "id": "pwFailures", "name": "Failures" },
+        { "id": "pwGraph", "name": "Dependency Graph" },
+        { "id": "pwFixes", "name": "Fixes" }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        { "command": "packageWorkbench.analyzeWorkspace", "when": "view == pwOverview", "group": "navigation" }
+      ]
+    },
+    "configuration": {
+      "title": "Package Workbench",
+      "properties": {
+        "packageWorkbench.autoAnalyze": {
+          "type": "boolean",
+          "default": true,
+          "description": "Re-analyze the workspace automatically when package.json or source files are saved."
+        },
+        "packageWorkbench.debounceMs": {
+          "type": "number",
+          "default": 800,
+          "description": "Debounce window (ms) for background re-analysis after edits."
+        },
+        "packageWorkbench.applyReviewFixes": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow applying review-required quick fixes (safe fixes always apply; dangerous fixes never do)."
+        },
+        "packageWorkbench.desktopAppPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the Package Workbench desktop executable (for 'Open Desktop App')."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "package": "vsce package"
+  },
+  "dependencies": {
+    "@package-workbench/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.5"
+  }
+}

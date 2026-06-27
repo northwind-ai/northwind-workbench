@@ -1,21 +1,31 @@
 {
   "name": "@package-workbench/desktop",
+  "productName": "Package Workbench",
   "version": "0.0.1",
   "description": "Electron desktop shell for Package Workbench.",
+  "author": "Package Workbench contributors",
   "license": "Apache-2.0",
   "type": "module",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
+    "dev": "pnpm build:worker && electron-vite dev",
+    "build:worker": "vite build --config vite.worker.config.ts",
+    "build": "electron-vite build && pnpm build:worker",
     "preview": "electron-vite preview",
+    "package": "pnpm build && electron-builder --config electron-builder.yml",
+    "package:dir": "pnpm build && electron-builder --config electron-builder.yml --dir",
+    "release": "pnpm build && electron-builder --config electron-builder.yml --publish onTagOrDraft",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@package-workbench/core": "workspace:*",
     "@package-workbench/ui": "workspace:*",
+    "electron-log": "^5.1.0",
+    "electron-updater": "^6.2.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.0",
+    "@package-workbench/chat-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
@@ -23,6 +33,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^30.1.0",
+    "electron-builder": "^24.13.3",
     "electron-vite": "^2.3.0",
     "typescript": "^5.4.5",
     "vite": "^5.3.1"

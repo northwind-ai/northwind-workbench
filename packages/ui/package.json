@@ -20,7 +20,9 @@
     "react": "^18.0.0"
   },
   "dependencies": {
-    "@package-workbench/core": "workspace:*"
+    "@package-workbench/core": "workspace:*",
+    "@package-workbench/plugin-sdk": "workspace:*",
+    "@package-workbench/chat-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

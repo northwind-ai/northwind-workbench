@@ -1,0 +1,6 @@
+{
+  "name": "util",
+  "projectType": "library",
+  "sourceRoot": "libs/util/src",
+  "targets": { "build": {}, "test": {} }
+}

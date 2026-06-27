@@ -2,7 +2,7 @@
 
 ## Guiding principle
 
-> Whether a package *works* can only be answered by **running** things.
+> Whether a package _works_ can only be answered by **running** things.
 
 So the system is built around a privileged headless engine (`core`) that the CLI and the
 Electron main process both drive. The Electron renderer is sandboxed and only renders JSON
@@ -21,14 +21,14 @@ it receives over IPC.
 
 ## Packages and the boundaries between them
 
-| Package      | May depend on                | Must NOT contain            |
-| ------------ | ---------------------------- | --------------------------- |
-| `plugin-sdk` | nothing                      | runtime deps, Node, UI      |
-| `core`       | `plugin-sdk`, Node           | UI, Electron                |
-| `cli`        | `core`                       | UI, Electron                |
-| `nx-adapter` | `plugin-sdk` (peer)          | `core` internals, UI        |
-| `ui`         | `core` (**types only**), React | Node, Electron            |
-| `desktop`    | `core`, `ui`, Electron       | validation logic            |
+| Package      | May depend on                                         | Must NOT contain       |
+| ------------ | ----------------------------------------------------- | ---------------------- |
+| `plugin-sdk` | nothing                                               | runtime deps, Node, UI |
+| `core`       | `plugin-sdk`, Node                                    | UI, Electron           |
+| `cli`        | `core`                                                | UI, Electron           |
+| `nx-adapter` | `plugin-sdk` (peer)                                   | `core` internals, UI   |
+| `ui`         | `plugin-sdk` (values), `core` (**types only**), React | Node, Electron         |
+| `desktop`    | `core`, `ui`, Electron                                | validation logic       |
 
 The renderer/UI importing **only types** from `core` is load-bearing: `import type` is
 erased at build, so `core`'s Node code (`child_process`, `fs`) never enters the renderer
@@ -36,31 +36,38 @@ bundle. The CSP in `index.html` and `contextIsolation`/`sandbox` enforce the res
 
 ## The runner (the shared spine)
 
-`createRunner({ cwd, plugins })` returns `{ detect, validatePackage, validateAll, on, host }`.
+`createRunner({ cwd, plugins, discoverPlugins })` returns
+`{ host, on, inspect, checkPackage, analyzeRuntime, scenariosFor, runScenarios, run }`.
 Both the CLI and Electron call this exact function — they differ only in how they render its
 event stream and reports. This is what makes "CLI and Electron share the same runner" literal
 rather than aspirational.
 
-Events: `detect:start → adapter:selected → detect:done → (package:start → validator:start →
-validator:done… → package:done)*`.
+Events: `run:start → workspace:detected → (package:start → check:start → check:done… →
+package:done)* → run:done`.
 
 ## Validation model
 
-Each `Validator` returns `{ status: pass|warn|fail|skip, score: 0..1, summary, evidence[] }`.
-The aggregate health score is the weight-weighted mean of non-skipped results, mapped to
-0..100. Built-ins, cheap → expensive:
+Each check returns `{ status: pass|warn|fail|skip|unknown, severity, summary, details?,
+evidence[] }`. The score starts at 100 and subtracts severity-weighted penalties
+(see `scoring.ts`); skipped/unknown checks erode _confidence_ instead. Built-in checks,
+cheap → expensive:
 
-| Validator       | Needs install? | What it proves |
-| --------------- | -------------- | -------------- |
-| `exports-valid` | no             | every declared entry resolves to a real file |
-| `can-import`    | no             | primary entry parses as a loadable module (`node --check`) |
-| `peer-deps`     | no             | required peers are resolvable (warn if not) |
-| `coverage`      | no             | a test script / coverage output exists |
-| `smoke`         | yes (opt-in)   | `workbench.scenario.mjs` imports + exercises the package |
-| `builds`        | yes (opt-in)   | the package's `build` script exits 0 |
+| Check                                                             | Executes code?   | What it proves                                     |
+| ----------------------------------------------------------------- | ---------------- | -------------------------------------------------- |
+| `package_json_valid`                                              | no               | manifest parses                                    |
+| `entrypoint_exists` / `main_module_exists` / `types_entry_exists` | no               | declared entries exist                             |
+| `module_resolution_check`                                         | no               | every `main`/`module`/`exports` target resolves    |
+| `exports_map_check`                                               | no               | the `exports` map is structurally valid            |
+| `missing_peer_dependencies`                                       | no               | required peers are resolvable (warn if not)        |
+| `required_scripts_present` / `dependency_version_shape`           | no               | hygiene                                            |
+| `browser_compatibility_check`                                     | no               | no browser-breaking Node built-ins                 |
+| `runtime_import_check`                                            | **yes**          | the entry actually imports in a child Node process |
+| `scenario_runner_check`                                           | **yes** (opt-in) | plugin scenarios pass (`PW_RUN_SCENARIOS`)         |
 
-`smoke` and `builds` self-`skip` unless the package opts in, so the default scan is safe and
-fast and gives signal even before `pnpm install`.
+The static checks are always safe and fast. `runtime_import_check` executes the package
+(disable with `PW_NO_RUNTIME=1`); `scenario_runner_check` runs only when `PW_RUN_SCENARIOS`
+is set (the `scenarios` command and desktop Scenario Runner set it). See
+[RUNTIME.md](./RUNTIME.md) and [SCENARIOS.md](./SCENARIOS.md).
 
 ## Plugin system
 

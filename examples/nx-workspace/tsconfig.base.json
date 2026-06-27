@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@nxdemo/util": ["libs/util/src/index.ts"]
+    }
+  }
+}

@@ -1,51 +1,101 @@
-# Package Workbench
+<div align="center">
 
-A desktop app for verifying that JavaScript/TypeScript packages **actually work** — not just compile.
+# 📦 Package Workbench
 
-Point it at a repo and it detects every package, then runs a battery of health checks
-(entry points resolve, module loads, peer deps present, builds succeed, runtime smoke
-scenario passes, tests exist) and shows you a per-package health score with drill-down
-failure logs.
+### Validate packages beyond compilation.
 
-> Status: **bootstrap**. The engine, CLI, plugin SDK, UI, and Electron shell are wired
-> end-to-end and ship with demo data. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Package Workbench verifies whether packages in a JS/TS workspace **actually work** —
+not just that they typecheck or build. Runtime imports, dependency boundaries, smoke-test
+scenarios, and regression tracking, in a CLI and a desktop app.
+
+[Quickstart](docs/quickstart.md) · [Architecture](docs/ARCHITECTURE.md) · [Plugins](docs/PLUGINS.md) · [CI](docs/HISTORY.md) · [Contributing](CONTRIBUTING.md)
+
+</div>
+
+---
 
 ## Why
 
-`tsc` passing tells you the types line up. It does **not** tell you the published `exports`
-point at real files, that the built module actually loads, that a required peer dependency
-is installed, or that importing the thing and calling it doesn't throw. Package Workbench
-runs those checks for real.
+A package can typecheck, build, and export symbols — and still fail at runtime due to a
+bad ESM/CJS config, an invalid `exports` map, a missing dependency, or a browser-only
+import. Package Workbench catches these, scores workspace health deterministically, maps
+how packages depend on each other, runs domain-specific smoke tests, and fails CI when
+things regress.
 
-## Repository layout
+## Features
+
+| | |
+| --- | --- |
+| 🩺 **Package health** | Deterministic checks across the whole workspace (npm / pnpm / Nx). |
+| ⚙️ **Runtime compatibility** | Sandboxed imports prove a package loads in Node CJS/ESM, the browser, and Electron. |
+| 🕸️ **Dependency intelligence** | Import-level graph with cycle detection, boundary rules, and architectural smells. |
+| 🧪 **Scenario testing** | Plugin-contributed smoke tests that prove packages do real work. |
+| 📉 **CI regression detection** | Historical runs + deltas; fail the build when health drops. |
+| 🧩 **Plugin system** | Add custom validators, scenarios, and workspace adapters. |
+
+## Install
+
+```bash
+# CLI (run in any JS/TS repo)
+npm install -D package-workbench    # or pnpm add -D / yarn add -D
+
+# Desktop app — download an installer from the Releases page (Win/macOS/Linux)
+```
+
+See [docs/installation.md](docs/installation.md).
+
+## Quickstart
+
+```bash
+package-workbench scan .                 # health check the workspace
+package-workbench runtime . --pretty     # runtime compatibility matrix
+package-workbench graph . --pretty       # dependency graph + violations
+package-workbench scenarios .            # run plugin smoke tests
+package-workbench ci .                    # CI gate (non-zero on regression)
+package-workbench report . --format html --out report.html
+```
+
+Full walkthrough: [docs/quickstart.md](docs/quickstart.md).
+
+## Monorepo layout
 
 ```
-package-workbench/
-├── apps/desktop/        Electron shell (electron-vite + React). A thin client.
-├── packages/
-│   ├── core/            Headless validation engine. No UI, no Electron.
-│   ├── cli/             `pw` — the engine on the command line.
-│   ├── plugin-sdk/      Stable, dependency-free interfaces for plugins.
-│   ├── nx-adapter/      Reference plugin: Nx workspace detection.
-│   └── ui/              Presentational React components.
-├── examples/            good-lib (healthy) + broken-lib (fails on purpose).
-└── docs/
+packages/
+  plugin-sdk     stable, dependency-free contracts (types + pure helpers)
+  core           the headless engine: scan, runtime, scenarios, graph, history
+  cli            the command-line runner
+  ui             presentational React components (no Node, no Electron)
+  nx-adapter     reference plugin (Nx discovery + classification)
+apps/
+  desktop        Electron app (main = engine host, renderer = sandboxed UI)
+examples/        sample workspaces used by demos + tests
+docs/            documentation
 ```
 
-## Quick start
+## Develop
 
 ```bash
 pnpm install
-
-# Desktop app (loads demo data on first launch)
-pnpm dev
-
-# CLI against the example packages
-pnpm cli -- --demo                 # built-in demo reports
-pnpm cli -- examples/good-lib      # scan a real package
-pnpm cli -- examples --json        # machine-readable
+pnpm test            # vitest
+pnpm typecheck       # all packages
+pnpm dev             # run the desktop app
+pnpm build           # build all packages
+pnpm package         # build desktop installers (electron-builder)
 ```
+
+## Documentation
+
+- [Installation](docs/installation.md) · [Quickstart](docs/quickstart.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Runtime engine](docs/RUNTIME.md) · [Scenarios](docs/SCENARIOS.md) · [Dependency graph](docs/GRAPH.md)
+- [Plugin development](docs/PLUGINS.md)
+- [History, reports & CI](docs/HISTORY.md) · [GitHub Actions example](docs/github-actions-example.yml)
+
+## Contributing
+
+Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) and our
+[Code of Conduct](CODE_OF_CONDUCT.md). Found a security issue? See [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache-2.0.
+[Apache-2.0](LICENSE) © Package Workbench contributors

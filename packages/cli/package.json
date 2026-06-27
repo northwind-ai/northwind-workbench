@@ -14,7 +14,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@package-workbench/core": "workspace:*"
+    "@package-workbench/core": "workspace:*",
+    "@package-workbench/chat-engine": "workspace:*",
+    "@package-workbench/git-intelligence": "workspace:*",
+    "@package-workbench/graph-sim": "workspace:*",
+    "@package-workbench/perf-intelligence": "workspace:*",
+    "@package-workbench/inventory": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

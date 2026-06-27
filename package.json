@@ -12,7 +12,12 @@
   "scripts": {
     "dev": "pnpm --filter @package-workbench/desktop dev",
     "build": "pnpm -r --filter \"./packages/*\" build",
+    "build:desktop": "pnpm --filter @package-workbench/desktop build",
+    "package": "pnpm build && pnpm --filter @package-workbench/desktop package",
+    "package:dir": "pnpm build && pnpm --filter @package-workbench/desktop package:dir",
+    "release": "pnpm build && pnpm --filter @package-workbench/desktop release",
     "typecheck": "pnpm -r typecheck",
+    "lint": "prettier --check .",
     "cli": "pnpm --filter @package-workbench/cli start --",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -1,0 +1,19 @@
+{
+  "name": "@example/simple-ts-package",
+  "version": "1.0.0",
+  "description": "A healthy single TypeScript package — all entries resolve and it imports cleanly.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test"
+  }
+}

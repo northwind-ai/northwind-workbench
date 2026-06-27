@@ -1,11 +1,16 @@
-import { exec as nodeExec } from 'node:child_process';
-import { readFile, access, readdir } from 'node:fs/promises';
-import { promisify } from 'node:util';
-import type { ExecOptions, ExecResult, Logger, PluginContext } from '@package-workbench/plugin-sdk';
+import { exec as nodeExec } from "node:child_process";
+import { readFile, access, readdir } from "node:fs/promises";
+import { promisify } from "node:util";
+import type {
+  ExecOptions,
+  ExecResult,
+  Logger,
+  PluginContext,
+} from "@package-workbench/plugin-sdk";
 
 const execAsync = promisify(nodeExec);
 
-export function createConsoleLogger(prefix = 'workbench'): Logger {
+export function createConsoleLogger(prefix = "workbench"): Logger {
   const tag = `[${prefix}]`;
   return {
     debug: (m, ...a) => process.env.PW_DEBUG && console.debug(tag, m, ...a),
@@ -16,7 +21,10 @@ export function createConsoleLogger(prefix = 'workbench'): Logger {
 }
 
 /** Default Node-backed context. The only place the engine touches the OS. */
-export function createNodeContext(cwd: string, logger: Logger = createConsoleLogger()): PluginContext {
+export function createNodeContext(
+  cwd: string,
+  logger: Logger = createConsoleLogger(),
+): PluginContext {
   return {
     cwd,
     logger,
@@ -32,19 +40,25 @@ export function createNodeContext(cwd: string, logger: Logger = createConsoleLog
         });
         return { code: 0, stdout, stderr, timedOut: false };
       } catch (err) {
-        const e = err as { code?: number; killed?: boolean; signal?: string; stdout?: string; stderr?: string };
+        const e = err as {
+          code?: number;
+          killed?: boolean;
+          signal?: string;
+          stdout?: string;
+          stderr?: string;
+        };
         return {
-          code: typeof e.code === 'number' ? e.code : 1,
-          stdout: e.stdout ?? '',
+          code: typeof e.code === "number" ? e.code : 1,
+          stdout: e.stdout ?? "",
           stderr: e.stderr ?? String(err),
-          timedOut: Boolean(e.killed) || e.signal === 'SIGTERM',
+          timedOut: Boolean(e.killed) || e.signal === "SIGTERM",
         };
       }
     },
 
     async readJson<T = unknown>(absPath: string): Promise<T | null> {
       try {
-        return JSON.parse(await readFile(absPath, 'utf8')) as T;
+        return JSON.parse(await readFile(absPath, "utf8")) as T;
       } catch {
         return null;
       }

@@ -1,13 +1,17 @@
-import type { HealthCheck } from '@package-workbench/plugin-sdk';
-import { packageJsonValid } from './package-json-valid';
-import { packageNamePresent } from './package-name-present';
-import { entrypointExists } from './entrypoint-exists';
-import { mainModuleExists } from './main-module-exists';
-import { typesEntryExists } from './types-entry-exists';
-import { missingPeerDependencies } from './missing-peer-dependencies';
-import { requiredScriptsPresent } from './required-scripts-present';
-import { dependencyVersionShape } from './dependency-version-shape';
-import { importCheck } from './import-check';
+import type { HealthCheck } from "@package-workbench/plugin-sdk";
+import { packageJsonValid } from "./package-json-valid";
+import { packageNamePresent } from "./package-name-present";
+import { entrypointExists } from "./entrypoint-exists";
+import { mainModuleExists } from "./main-module-exists";
+import { typesEntryExists } from "./types-entry-exists";
+import { missingPeerDependencies } from "./missing-peer-dependencies";
+import { requiredScriptsPresent } from "./required-scripts-present";
+import { dependencyVersionShape } from "./dependency-version-shape";
+import { moduleResolutionCheck } from "./module-resolution-check";
+import { exportsMapCheck } from "./exports-map-check";
+import { browserCompatibilityCheck } from "./browser-compatibility-check";
+import { runtimeImportCheck } from "./runtime-import-check";
+import { scenarioRunnerCheck } from "./scenario-runner-check";
 
 export {
   packageJsonValid,
@@ -18,13 +22,18 @@ export {
   missingPeerDependencies,
   requiredScriptsPresent,
   dependencyVersionShape,
-  importCheck,
+  moduleResolutionCheck,
+  exportsMapCheck,
+  browserCompatibilityCheck,
+  runtimeImportCheck,
+  scenarioRunnerCheck,
 };
 
 /**
- * Default check set. All static and deterministic — no builds, no code
- * execution. `import_check` is a declared-but-skipped placeholder for the
- * upcoming runtime import feature.
+ * Default check set, ordered cheap → expensive. The static checks (manifest,
+ * resolution, exports, browser) never execute code. The runtime + scenario
+ * checks do: `runtime_import_check` imports the entry in a child process, and
+ * `scenario_runner_check` runs plugin scenarios when `PW_RUN_SCENARIOS` is set.
  */
 export const builtinChecks: HealthCheck[] = [
   packageJsonValid,
@@ -32,8 +41,12 @@ export const builtinChecks: HealthCheck[] = [
   entrypointExists,
   mainModuleExists,
   typesEntryExists,
+  moduleResolutionCheck,
+  exportsMapCheck,
   missingPeerDependencies,
   requiredScriptsPresent,
   dependencyVersionShape,
-  importCheck,
+  browserCompatibilityCheck,
+  runtimeImportCheck,
+  scenarioRunnerCheck,
 ];

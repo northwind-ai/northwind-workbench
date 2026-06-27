@@ -145,3 +145,9 @@ vite.config.ts.timestamp-*
 # electron-vite build output
 out/
 .vite/
+
+# Electron-builder packaging output
+apps/desktop/release/
+
+# Private plugins (not part of the public OSS repo)
+/plugins/

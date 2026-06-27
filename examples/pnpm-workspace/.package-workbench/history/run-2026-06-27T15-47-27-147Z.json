@@ -1,0 +1,56 @@
+{
+  "id": "run-2026-06-27T15-47-27-147Z",
+  "metadata": {
+    "runId": "run-2026-06-27T15-47-27-147Z",
+    "timestamp": "2026-06-27T15:47:27.147Z",
+    "gitBranch": "main",
+    "gitCommit": "179692474b5e6ad025264c23dad9551318c179bb",
+    "workspacePath": "C:\\Users\\micha\\Repositories\\northwind-workbench\\examples\\pnpm-workspace"
+  },
+  "overallScore": 73,
+  "summary": {
+    "totalPackages": 3,
+    "passed": 0,
+    "warned": 1,
+    "failed": 2,
+    "averageScore": 73
+  },
+  "packages": [
+    {
+      "id": "@demo/app",
+      "name": "@demo/app",
+      "score": 66,
+      "status": "fail",
+      "failedCheckIds": [
+        "runtime_import_check"
+      ],
+      "scenarioPassRate": null
+    },
+    {
+      "id": "@demo/core",
+      "name": "@demo/core",
+      "score": 92,
+      "status": "warn",
+      "failedCheckIds": [],
+      "scenarioPassRate": null
+    },
+    {
+      "id": "@demo/ui",
+      "name": "@demo/ui",
+      "score": 62,
+      "status": "fail",
+      "failedCheckIds": [
+        "runtime_import_check"
+      ],
+      "scenarioPassRate": null
+    }
+  ],
+  "graph": {
+    "score": 100,
+    "grade": "A",
+    "cycleCount": 0,
+    "violationCount": 0,
+    "smellCount": 0
+  },
+  "scenarios": null
+}

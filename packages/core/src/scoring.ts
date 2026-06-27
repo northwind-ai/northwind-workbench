@@ -1,5 +1,9 @@
-import type { HealthCheckResult, HealthCheckSeverity, PackageInfo } from '@package-workbench/plugin-sdk';
-import type { Confidence, PackageHealthReport, PackageStatus } from './types';
+import type {
+  HealthCheckResult,
+  HealthCheckSeverity,
+  PackageInfo,
+} from "@package-workbench/plugin-sdk";
+import type { Confidence, PackageHealthReport, PackageStatus } from "./types";
 
 /**
  * Deterministic health scoring. No randomness, no time dependence — the same
@@ -31,37 +35,41 @@ const WARN_PENALTY: Record<HealthCheckSeverity, number> = {
   info: 1,
 };
 
-const clamp = (n: number, lo = 0, hi = 100): number => Math.max(lo, Math.min(hi, n));
+const clamp = (n: number, lo = 0, hi = 100): number =>
+  Math.max(lo, Math.min(hi, n));
 
 export function computeScore(checks: HealthCheckResult[]): number {
   let penalty = 0;
   for (const c of checks) {
-    if (c.status === 'fail') penalty += FAIL_PENALTY[c.severity];
-    else if (c.status === 'warn') penalty += WARN_PENALTY[c.severity];
+    if (c.status === "fail") penalty += FAIL_PENALTY[c.severity];
+    else if (c.status === "warn") penalty += WARN_PENALTY[c.severity];
   }
   return clamp(Math.round(100 - penalty));
 }
 
 export function computeConfidence(checks: HealthCheckResult[]): Confidence {
-  if (checks.length === 0) return 'low';
+  if (checks.length === 0) return "low";
 
-  const conclusive = checks.filter((c) => c.status === 'pass' || c.status === 'fail' || c.status === 'warn').length;
+  const conclusive = checks.filter(
+    (c) => c.status === "pass" || c.status === "fail" || c.status === "warn",
+  ).length;
   const ratio = conclusive / checks.length;
-  const hasUnknown = checks.some((c) => c.status === 'unknown');
+  const hasUnknown = checks.some((c) => c.status === "unknown");
 
-  let confidence: Confidence = ratio >= 0.75 ? 'high' : ratio >= 0.45 ? 'medium' : 'low';
+  let confidence: Confidence =
+    ratio >= 0.75 ? "high" : ratio >= 0.45 ? "medium" : "low";
 
   // `unknown` (couldn't determine) is worse than `skip` (deliberately N/A):
   // never report high confidence while a check failed to resolve at all.
-  if (hasUnknown && confidence === 'high') confidence = 'medium';
+  if (hasUnknown && confidence === "high") confidence = "medium";
 
   return confidence;
 }
 
 export function computeStatus(checks: HealthCheckResult[]): PackageStatus {
-  if (checks.some((c) => c.status === 'fail')) return 'fail';
-  if (checks.some((c) => c.status === 'warn')) return 'warn';
-  return 'pass';
+  if (checks.some((c) => c.status === "fail")) return "fail";
+  if (checks.some((c) => c.status === "warn")) return "warn";
+  return "pass";
 }
 
 /** Build a full report for one package from its check results. */
@@ -81,13 +89,18 @@ export function buildReport(
 }
 
 /** Aggregate a set of package reports into a run summary. */
-export function summarize(reports: PackageHealthReport[]): import('./types').WorkbenchRunSummary {
+export function summarize(
+  reports: PackageHealthReport[],
+): import("./types").WorkbenchRunSummary {
   const total = reports.length;
-  const passed = reports.filter((r) => r.status === 'pass').length;
-  const warned = reports.filter((r) => r.status === 'warn').length;
-  const failed = reports.filter((r) => r.status === 'fail').length;
-  const lowConfidence = reports.filter((r) => r.confidence === 'low').length;
-  const averageScore = total === 0 ? 0 : Math.round(reports.reduce((s, r) => s + r.score, 0) / total);
+  const passed = reports.filter((r) => r.status === "pass").length;
+  const warned = reports.filter((r) => r.status === "warn").length;
+  const failed = reports.filter((r) => r.status === "fail").length;
+  const lowConfidence = reports.filter((r) => r.confidence === "low").length;
+  const averageScore =
+    total === 0
+      ? 0
+      : Math.round(reports.reduce((s, r) => s + r.score, 0) / total);
 
   let worstPackageId: string | null = null;
   let worstScore = Infinity;
@@ -98,5 +111,13 @@ export function summarize(reports: PackageHealthReport[]): import('./types').Wor
     }
   }
 
-  return { totalPackages: total, passed, warned, failed, averageScore, lowConfidence, worstPackageId };
+  return {
+    totalPackages: total,
+    passed,
+    warned,
+    failed,
+    averageScore,
+    lowConfidence,
+    worstPackageId,
+  };
 }

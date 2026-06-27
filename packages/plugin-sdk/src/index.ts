@@ -7,22 +7,38 @@
  * atoms are re-exported from `@package-workbench/core`.
  */
 
+// Runtime compatibility + scenario contracts live in their own modules and are
+// re-exported here so consumers have one import for the whole domain.
+export * from "./runtime";
+export * from "./scenarios";
+export * from "./graph";
+export * from "./history";
+
+import type { AbortSignalLike, ScenarioDefinition } from "./scenarios";
+
 // ---- Workspace / package model ----------------------------------------------
 
-export type PackageManager = 'npm' | 'pnpm' | 'yarn' | 'bun' | 'unknown';
+export type PackageManager = "npm" | "pnpm" | "yarn" | "bun" | "unknown";
 
 /** Where a package is intended to run — drives which checks make sense. */
-export type PackageRuntime = 'node' | 'browser' | 'electron' | 'universal' | 'edge' | 'deno' | 'unknown';
+export type PackageRuntime =
+  | "node"
+  | "browser"
+  | "electron"
+  | "universal"
+  | "edge"
+  | "deno"
+  | "unknown";
 
 /** The role a package plays in the repo. */
-export type PackageType = 'app' | 'library' | 'tool' | 'unknown';
+export type PackageType = "app" | "library" | "tool" | "unknown";
 
 /** Minimal, structurally-typed view of a package.json. */
 export interface PackageManifest {
   name?: string;
   version?: string;
   private?: boolean;
-  type?: 'module' | 'commonjs';
+  type?: "module" | "commonjs";
   main?: string;
   module?: string;
   browser?: string | Record<string, unknown>;
@@ -86,10 +102,15 @@ export interface WorkspaceInfo {
 
 // ---- Health check model ------------------------------------------------------
 
-export type HealthCheckStatus = 'pass' | 'warn' | 'fail' | 'skip' | 'unknown';
+export type HealthCheckStatus = "pass" | "warn" | "fail" | "skip" | "unknown";
 
 /** How damaging a failing/warning check is. Drives scoring weight. */
-export type HealthCheckSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type HealthCheckSeverity =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "info";
 
 /**
  * The outcome a check returns. The runner enriches this into a full
@@ -152,6 +173,14 @@ export interface CheckContext {
   package: PackageInfo;
   workspace: WorkspaceInfo;
   host: PluginContext;
+  /**
+   * Scenarios contributed by plugins that `supports()` this package. The runner
+   * populates this so the scenario-runner check can execute them without
+   * reaching back into the plugin host. Empty when no plugin applies.
+   */
+  scenarios?: ScenarioDefinition[];
+  /** Aborts when the run is cancelled; checks should pass it to child work. */
+  signal?: AbortSignalLike;
 }
 
 /** A single health check. Return `skip`/`unknown` when not applicable. */
@@ -174,55 +203,111 @@ export interface WorkspaceAdapter {
   listPackages(cwd: string, ctx: PluginContext): Promise<PackageInfo[]>;
 }
 
-/** The unit of extension. Contributes adapters and/or checks. */
+/**
+ * A plugin's health-check unit. Structurally identical to {@link HealthCheck} —
+ * `PluginValidator` is the name used in plugin-facing docs/APIs, while
+ * `HealthCheck` is the name the engine uses internally. They are interchangeable.
+ */
+export type PluginValidator = HealthCheck;
+
+/**
+ * The unit of extension. Contributes adapters, checks/validators, and/or
+ * scenarios. All fields are optional so a plugin can specialise.
+ *
+ * `supports(pkg)` gates a plugin's validators + scenarios to the packages it
+ * understands (e.g. an Nx plugin only to Nx projects). Omit it to apply to every
+ * package. `checks` and `validators` are merged — they are the same concept.
+ */
 export interface Plugin {
+  /** Stable identity. Optional for back-compat; required by {@link WorkbenchPlugin}. */
+  id?: string;
   name: string;
   version?: string;
+  /** Return false to opt this plugin's validators/scenarios out of a package. */
+  supports?(pkg: PackageInfo): boolean;
   adapters?: WorkspaceAdapter[];
   checks?: HealthCheck[];
+  validators?: PluginValidator[];
+  scenarios?: ScenarioDefinition[];
   setup?(ctx: PluginContext): void | Promise<void>;
+}
+
+/**
+ * The fully-specified plugin shape recommended for new plugins: a required
+ * stable `id`, `name`, `version`, and an explicit `supports()` predicate.
+ * Assignable anywhere a {@link Plugin} is expected.
+ */
+export interface WorkbenchPlugin extends Plugin {
+  id: string;
+  version: string;
+  supports(pkg: PackageInfo): boolean;
 }
 
 // ---- Identity helpers (type inference + stable, evolvable signatures) --------
 
 export const definePlugin = (plugin: Plugin): Plugin => plugin;
+/** Like {@link definePlugin} but enforces the stricter {@link WorkbenchPlugin} shape. */
+export const defineWorkbenchPlugin = (
+  plugin: WorkbenchPlugin,
+): WorkbenchPlugin => plugin;
 export const defineCheck = (check: HealthCheck): HealthCheck => check;
-export const defineAdapter = (adapter: WorkspaceAdapter): WorkspaceAdapter => adapter;
+/** Alias of {@link defineCheck} using plugin-facing terminology. */
+export const defineValidator = (validator: PluginValidator): PluginValidator =>
+  validator;
+export const defineAdapter = (adapter: WorkspaceAdapter): WorkspaceAdapter =>
+  adapter;
 
 // ---- Outcome constructors (ergonomics for check authors) ---------------------
 
-type OutcomeExtra = Partial<Pick<HealthCheckOutcome, 'details' | 'evidence'>>;
+type OutcomeExtra = Partial<Pick<HealthCheckOutcome, "details" | "evidence">>;
 
-export const pass = (summary: string, extra: OutcomeExtra = {}): HealthCheckOutcome => ({
-  status: 'pass',
-  severity: 'info',
+export const pass = (
+  summary: string,
+  extra: OutcomeExtra = {},
+): HealthCheckOutcome => ({
+  status: "pass",
+  severity: "info",
   summary,
   ...extra,
 });
 
-export const skip = (summary: string, extra: OutcomeExtra = {}): HealthCheckOutcome => ({
-  status: 'skip',
-  severity: 'info',
+export const skip = (
+  summary: string,
+  extra: OutcomeExtra = {},
+): HealthCheckOutcome => ({
+  status: "skip",
+  severity: "info",
   summary,
   ...extra,
 });
 
-export const unknown = (summary: string, extra: OutcomeExtra = {}): HealthCheckOutcome => ({
-  status: 'unknown',
-  severity: 'info',
+export const unknown = (
+  summary: string,
+  extra: OutcomeExtra = {},
+): HealthCheckOutcome => ({
+  status: "unknown",
+  severity: "info",
   summary,
   ...extra,
 });
 
-export const warn = (severity: HealthCheckSeverity, summary: string, extra: OutcomeExtra = {}): HealthCheckOutcome => ({
-  status: 'warn',
+export const warn = (
+  severity: HealthCheckSeverity,
+  summary: string,
+  extra: OutcomeExtra = {},
+): HealthCheckOutcome => ({
+  status: "warn",
   severity,
   summary,
   ...extra,
 });
 
-export const fail = (severity: HealthCheckSeverity, summary: string, extra: OutcomeExtra = {}): HealthCheckOutcome => ({
-  status: 'fail',
+export const fail = (
+  severity: HealthCheckSeverity,
+  summary: string,
+  extra: OutcomeExtra = {},
+): HealthCheckOutcome => ({
+  status: "fail",
   severity,
   summary,
   ...extra,
@@ -230,36 +315,51 @@ export const fail = (severity: HealthCheckSeverity, summary: string, extra: Outc
 
 // ---- Pure helpers (no Node imports — safe to bundle anywhere) ----------------
 
-const has = (obj: Record<string, string> | undefined, key: string): boolean => Boolean(obj && key in obj);
+const has = (obj: Record<string, string> | undefined, key: string): boolean =>
+  Boolean(obj && key in obj);
 
 /** Infer a package's intended runtime from its manifest. */
 export function inferRuntime(manifest: PackageManifest): PackageRuntime {
   const deps = { ...manifest.dependencies, ...manifest.devDependencies };
-  if (has(deps, 'electron')) return 'electron';
-  if (manifest.browser != null) return 'browser';
+  if (has(deps, "electron")) return "electron";
+  if (manifest.browser != null) return "browser";
 
   const exportsObj = manifest.exports;
-  if (exportsObj && typeof exportsObj === 'object') {
+  if (exportsObj && typeof exportsObj === "object") {
     const json = JSON.stringify(exportsObj);
-    if (json.includes('"browser"')) return 'browser';
-    if (json.includes('"edge') || json.includes('worker')) return 'edge';
+    if (json.includes('"browser"')) return "browser";
+    if (json.includes('"edge') || json.includes("worker")) return "edge";
   }
 
-  if (has(deps, 'react') || has(deps, 'react-dom') || has(deps, 'vue') || has(deps, 'svelte') || has(deps, '@angular/core')) {
-    return 'browser';
+  if (
+    has(deps, "react") ||
+    has(deps, "react-dom") ||
+    has(deps, "vue") ||
+    has(deps, "svelte") ||
+    has(deps, "@angular/core")
+  ) {
+    return "browser";
   }
-  if (manifest.bin || manifest.engines?.node) return 'node';
-  if (manifest.main || manifest.module || manifest.exports) return 'universal';
-  return 'unknown';
+  if (manifest.bin || manifest.engines?.node) return "node";
+  if (manifest.main || manifest.module || manifest.exports) return "universal";
+  return "unknown";
 }
 
 /** Infer whether a package is an app, a library, a tool, or unknown. */
 export function inferPackageType(manifest: PackageManifest): PackageType {
-  if (manifest.bin) return 'tool';
-  if (manifest.exports || manifest.main || manifest.module || manifest.types || manifest.typings) return 'library';
+  if (manifest.bin) return "tool";
+  if (
+    manifest.exports ||
+    manifest.main ||
+    manifest.module ||
+    manifest.types ||
+    manifest.typings
+  )
+    return "library";
   const scripts = manifest.scripts ?? {};
-  if (scripts.start || scripts.dev || (manifest.private && scripts.build)) return 'app';
-  return 'unknown';
+  if (scripts.start || scripts.dev || (manifest.private && scripts.build))
+    return "app";
+  return "unknown";
 }
 
 export interface AssemblePackageInfoInput {
@@ -273,13 +373,15 @@ export interface AssemblePackageInfoInput {
 }
 
 /** Pure constructor for PackageInfo — shared by the core scanner and plugins. */
-export function assemblePackageInfo(input: AssemblePackageInfoInput): PackageInfo {
+export function assemblePackageInfo(
+  input: AssemblePackageInfoInput,
+): PackageInfo {
   const { root, packageJsonPath, manifest } = input;
   const name = manifest.name ?? input.fallbackName ?? root;
   return {
     id: name,
     name,
-    version: manifest.version ?? '0.0.0',
+    version: manifest.version ?? "0.0.0",
     root,
     packageJsonPath,
     private: manifest.private === true,

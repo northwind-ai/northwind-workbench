@@ -1,0 +1,162 @@
+{
+  "id": "perf-2026-06-27T22:35:33.855Z",
+  "timestamp": "2026-06-27T22:35:33.855Z",
+  "workspacePath": "C:\\Users\\micha\\Repositories\\northwind-workbench\\examples\\pnpm-workspace",
+  "packages": [
+    {
+      "id": "@demo/app",
+      "name": "@demo/app",
+      "build": {
+        "estimatedWeight": 16,
+        "contribution": 0.516,
+        "measured": false
+      },
+      "runtime": {
+        "importLatencyMs": 0,
+        "slowestImportMs": 0
+      },
+      "memory": {
+        "peakBytes": 0,
+        "avgBytes": 0,
+        "spike": false,
+        "leakSuspicion": false
+      },
+      "bundleBytes": 0,
+      "checkMs": 55,
+      "scenarioMs": 0
+    },
+    {
+      "id": "@demo/core",
+      "name": "@demo/core",
+      "build": {
+        "estimatedWeight": 5,
+        "contribution": 0.161,
+        "measured": false
+      },
+      "runtime": {
+        "importLatencyMs": 0,
+        "slowestImportMs": 0
+      },
+      "memory": {
+        "peakBytes": 0,
+        "avgBytes": 0,
+        "spike": false,
+        "leakSuspicion": false
+      },
+      "bundleBytes": 0,
+      "checkMs": 48,
+      "scenarioMs": 0
+    },
+    {
+      "id": "@demo/ui",
+      "name": "@demo/ui",
+      "build": {
+        "estimatedWeight": 10,
+        "contribution": 0.323,
+        "measured": false
+      },
+      "runtime": {
+        "importLatencyMs": 0,
+        "slowestImportMs": 0
+      },
+      "memory": {
+        "peakBytes": 0,
+        "avgBytes": 0,
+        "spike": false,
+        "leakSuspicion": false
+      },
+      "bundleBytes": 0,
+      "checkMs": 50,
+      "scenarioMs": 0
+    }
+  ],
+  "checkCosts": [
+    {
+      "checkId": "runtime_import_check",
+      "totalMs": 148,
+      "count": 3,
+      "avgMs": 49
+    },
+    {
+      "checkId": "browser_compatibility_check",
+      "totalMs": 4,
+      "count": 3,
+      "avgMs": 1
+    },
+    {
+      "checkId": "module_resolution_check",
+      "totalMs": 1,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "package_json_valid",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "package_name_present",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "entrypoint_exists",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "main_module_exists",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "types_entry_exists",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "exports_map_check",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "missing_peer_dependencies",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "required_scripts_present",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "dependency_version_shape",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    },
+    {
+      "checkId": "scenario_runner_check",
+      "totalMs": 0,
+      "count": 3,
+      "avgMs": 0
+    }
+  ],
+  "dependencyCosts": [],
+  "totals": {
+    "estimatedBuildWeight": 31,
+    "checkMs": 153,
+    "scenarioMs": 0,
+    "runtimeImportMs": 0,
+    "peakMemoryBytes": 0,
+    "bundleBytes": 0
+  }
+}

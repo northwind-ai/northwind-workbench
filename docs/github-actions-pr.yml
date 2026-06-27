@@ -1,0 +1,61 @@
+# Package Workbench — PR review gate.
+#
+# Posts an automated review comment on every pull request and fails the check
+# when the merge policy says "block". Deterministic and scan-only — no installs
+# beyond the workspace's own, fast enough to run on every push.
+#
+# Copy to .github/workflows/workbench-pr.yml in your repo.
+
+name: Package Workbench PR Review
+
+on:
+  pull_request:
+    branches: [main]
+
+# Allow the job to comment on the PR + set a status.
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  workbench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need full history so we can diff PR...base for the blast radius.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # 1) Establish/refresh the BASE baseline (runs on the base branch state).
+      #    `ci` persists a snapshot to .package-workbench/history.
+      - name: Baseline (base branch)
+        run: |
+          git checkout ${{ github.event.pull_request.base.sha }} -- . 2>/dev/null || true
+          pnpm package-workbench ci . --quiet || true
+          git checkout ${{ github.sha }} -- . 2>/dev/null || true
+
+      # 2) Analyze the PR head against that baseline → comment + status + annotations.
+      - name: PR review
+        id: review
+        run: |
+          pnpm package-workbench pr . \
+            --base origin/${{ github.event.pull_request.base.ref }} \
+            --github \
+            --format markdown \
+            --out workbench-pr.md
+
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: workbench-pr.md

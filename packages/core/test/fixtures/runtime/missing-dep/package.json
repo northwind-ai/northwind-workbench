@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/missing-dep",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./index.js",
+  "dependencies": {
+    "definitely-missing-package-xyz": "^1.0.0"
+  }
+}

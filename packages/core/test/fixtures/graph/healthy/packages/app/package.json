@@ -1,0 +1,7 @@
+{
+  "name": "@h/app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "dev": "vite" },
+  "dependencies": { "@h/ui": "workspace:*", "@h/auth": "workspace:*", "lodash": "^4.17.0" }
+}

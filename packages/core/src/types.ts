@@ -1,14 +1,17 @@
 import type {
+  DependencyGraph,
   HealthCheckResult,
   PackageInfo,
+  RuntimeCompatibilityReport,
+  ScenarioRunResult,
   WorkspaceInfo,
-} from '@package-workbench/plugin-sdk';
+} from "@package-workbench/plugin-sdk";
 
 /** How much we trust a package's score, given how many checks were conclusive. */
-export type Confidence = 'low' | 'medium' | 'high';
+export type Confidence = "low" | "medium" | "high";
 
 /** Overall roll-up status for a package. */
-export type PackageStatus = 'pass' | 'warn' | 'fail';
+export type PackageStatus = "pass" | "warn" | "fail";
 
 /** The aggregate health outcome for one package. */
 export interface PackageHealthReport {
@@ -19,6 +22,13 @@ export interface PackageHealthReport {
   confidence: Confidence;
   status: PackageStatus;
   generatedAt: string;
+  /**
+   * Runtime compatibility matrix. Populated on demand (it can execute the
+   * package), not during a default scan — see the runtime engine.
+   */
+  runtime?: RuntimeCompatibilityReport;
+  /** Last scenario run for this package, when scenarios have been executed. */
+  scenarios?: ScenarioRunResult;
 }
 
 /** A full Workbench run across an entire workspace. */
@@ -29,6 +39,8 @@ export interface WorkbenchRun {
   summary: WorkbenchRunSummary;
   startedAt: string;
   finishedAt: string;
+  /** Dependency graph + analysis. Populated on demand (it scans all sources). */
+  graph?: DependencyGraph;
 }
 
 /** Aggregate counts for a run, for dashboards and CI gates. */
@@ -47,10 +59,10 @@ export interface WorkbenchRunSummary {
 
 /** Progress events emitted by a runner. CLI prints them; the UI streams them. */
 export type RunnerEvent =
-  | { type: 'run:start'; cwd: string }
-  | { type: 'workspace:detected'; workspace: WorkspaceInfo }
-  | { type: 'package:start'; packageId: string }
-  | { type: 'check:start'; packageId: string; checkId: string }
-  | { type: 'check:done'; packageId: string; result: HealthCheckResult }
-  | { type: 'package:done'; report: PackageHealthReport }
-  | { type: 'run:done'; run: WorkbenchRun };
+  | { type: "run:start"; cwd: string }
+  | { type: "workspace:detected"; workspace: WorkspaceInfo }
+  | { type: "package:start"; packageId: string }
+  | { type: "check:start"; packageId: string; checkId: string }
+  | { type: "check:done"; packageId: string; result: HealthCheckResult }
+  | { type: "package:done"; report: PackageHealthReport }
+  | { type: "run:done"; run: WorkbenchRun };

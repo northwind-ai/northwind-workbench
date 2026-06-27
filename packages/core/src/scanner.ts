@@ -1,5 +1,5 @@
-import { readFile, readdir, stat } from 'node:fs/promises';
-import { basename, join, resolve } from 'node:path';
+import { readFile, readdir, stat } from "node:fs/promises";
+import { basename, join, resolve } from "node:path";
 import {
   assemblePackageInfo,
   type PackageInfo,
@@ -7,7 +7,7 @@ import {
   type PackageManifest,
   type WorkspaceInfo,
   type WorkspaceTooling,
-} from '@package-workbench/plugin-sdk';
+} from "@package-workbench/plugin-sdk";
 
 /**
  * The real workspace scanner. Self-contained (uses node:fs directly) so it can
@@ -23,7 +23,7 @@ export interface ScanResult {
   packages: PackageInfo[];
 }
 
-const FALLBACK_GLOBS = ['apps/*', 'packages/*', 'libs/*'];
+const FALLBACK_GLOBS = ["apps/*", "packages/*", "libs/*"];
 
 async function exists(p: string): Promise<boolean> {
   try {
@@ -57,43 +57,75 @@ async function readManifest(
 ): Promise<{ manifest: PackageManifest; valid: boolean; warning?: string }> {
   let raw: string;
   try {
-    raw = await readFile(packageJsonPath, 'utf8');
+    raw = await readFile(packageJsonPath, "utf8");
   } catch (err) {
-    return { manifest: {}, valid: false, warning: `Could not read package.json: ${errMsg(err)}` };
+    return {
+      manifest: {},
+      valid: false,
+      warning: `Could not read package.json: ${errMsg(err)}`,
+    };
   }
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') {
-      return { manifest: {}, valid: false, warning: 'package.json is not a JSON object' };
+    if (!parsed || typeof parsed !== "object") {
+      return {
+        manifest: {},
+        valid: false,
+        warning: "package.json is not a JSON object",
+      };
     }
     return { manifest: parsed as PackageManifest, valid: true };
   } catch (err) {
-    return { manifest: {}, valid: false, warning: `Invalid JSON in package.json: ${errMsg(err)}` };
+    return {
+      manifest: {},
+      valid: false,
+      warning: `Invalid JSON in package.json: ${errMsg(err)}`,
+    };
   }
 }
 
-const errMsg = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+const errMsg = (err: unknown): string =>
+  err instanceof Error ? err.message : String(err);
 
 async function detectPackageManager(cwd: string): Promise<PackageManager> {
-  if (await exists(join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
-  if (await exists(join(cwd, 'pnpm-workspace.yaml'))) return 'pnpm';
-  if (await exists(join(cwd, 'bun.lockb'))) return 'bun';
-  if (await exists(join(cwd, 'yarn.lock'))) return 'yarn';
-  if (await exists(join(cwd, 'package-lock.json'))) return 'npm';
-  return 'unknown';
+  // Prefer the explicit `packageManager` field (Corepack) when present.
+  const pmField = await readPackageManagerField(cwd);
+  if (pmField) return pmField;
+  if (await exists(join(cwd, "pnpm-lock.yaml"))) return "pnpm";
+  if (await exists(join(cwd, "pnpm-workspace.yaml"))) return "pnpm";
+  if (
+    (await exists(join(cwd, "bun.lockb"))) ||
+    (await exists(join(cwd, "bun.lock")))
+  )
+    return "bun";
+  if (await exists(join(cwd, "yarn.lock"))) return "yarn";
+  if (await exists(join(cwd, "package-lock.json"))) return "npm";
+  return "unknown";
+}
+
+/** Read the package manager name from package.json's `packageManager` field. */
+async function readPackageManagerField(
+  cwd: string,
+): Promise<PackageManager | null> {
+  const { manifest, valid } = await readManifest(join(cwd, "package.json"));
+  if (!valid || typeof manifest.packageManager !== "string") return null;
+  const name = manifest.packageManager.split("@")[0];
+  return name === "pnpm" || name === "npm" || name === "yarn" || name === "bun"
+    ? name
+    : null;
 }
 
 /** Extract items under the top-level `packages:` key of pnpm-workspace.yaml. */
 function parsePnpmPackages(yaml: string): string[] {
   const patterns: string[] = [];
   let inPackages = false;
-  for (const line of yaml.split('\n')) {
+  for (const line of yaml.split("\n")) {
     if (/^packages\s*:/.test(line)) {
       inPackages = true;
       continue;
     }
     if (inPackages) {
-      if (/^\S/.test(line) && !line.trimStart().startsWith('-')) break;
+      if (/^\S/.test(line) && !line.trimStart().startsWith("-")) break;
       const m = line.match(/^\s*-\s*['"]?([^'"#]+)['"]?\s*$/);
       if (m?.[1]) patterns.push(m[1].trim());
     }
@@ -105,16 +137,16 @@ function parsePnpmPackages(yaml: string): string[] {
 async function expandGlobs(cwd: string, patterns: string[]): Promise<string[]> {
   const roots = new Set<string>();
   for (const raw of patterns) {
-    const pattern = raw.replace(/^\.\//, '').replace(/\/+$/, '');
-    if (pattern.endsWith('/*')) {
+    const pattern = raw.replace(/^\.\//, "").replace(/\/+$/, "");
+    if (pattern.endsWith("/*")) {
       const baseAbs = join(cwd, pattern.slice(0, -2));
       for (const child of await listDirs(baseAbs)) {
         const candidate = join(baseAbs, child);
-        if (await exists(join(candidate, 'package.json'))) roots.add(candidate);
+        if (await exists(join(candidate, "package.json"))) roots.add(candidate);
       }
     } else {
       const candidate = join(cwd, pattern);
-      if (await exists(join(candidate, 'package.json'))) roots.add(candidate);
+      if (await exists(join(candidate, "package.json"))) roots.add(candidate);
     }
   }
   return [...roots];
@@ -127,7 +159,10 @@ async function findNxProjects(cwd: string): Promise<string[]> {
     const baseAbs = join(cwd, layout.slice(0, -2));
     for (const child of await listDirs(baseAbs)) {
       const candidate = join(baseAbs, child);
-      if ((await exists(join(candidate, 'project.json'))) || (await exists(join(candidate, 'package.json')))) {
+      if (
+        (await exists(join(candidate, "project.json"))) ||
+        (await exists(join(candidate, "package.json")))
+      ) {
         roots.add(candidate);
       }
     }
@@ -140,11 +175,13 @@ export async function scanWorkspace(cwdInput: string): Promise<ScanResult> {
   const warnings: string[] = [];
 
   const tooling: WorkspaceTooling = {
-    packageJson: await exists(join(cwd, 'package.json')),
-    pnpmWorkspace: await exists(join(cwd, 'pnpm-workspace.yaml')),
-    nx: await exists(join(cwd, 'nx.json')),
-    turbo: await exists(join(cwd, 'turbo.json')),
-    tsconfigBase: (await exists(join(cwd, 'tsconfig.base.json'))) || (await exists(join(cwd, 'tsconfig.json'))),
+    packageJson: await exists(join(cwd, "package.json")),
+    pnpmWorkspace: await exists(join(cwd, "pnpm-workspace.yaml")),
+    nx: await exists(join(cwd, "nx.json")),
+    turbo: await exists(join(cwd, "turbo.json")),
+    tsconfigBase:
+      (await exists(join(cwd, "tsconfig.base.json"))) ||
+      (await exists(join(cwd, "tsconfig.json"))),
   };
 
   // ---- Discover candidate package roots, most specific source first. --------
@@ -152,8 +189,9 @@ export async function scanWorkspace(cwdInput: string): Promise<ScanResult> {
 
   if (tooling.pnpmWorkspace) {
     try {
-      const yaml = await readFile(join(cwd, 'pnpm-workspace.yaml'), 'utf8');
-      for (const r of await expandGlobs(cwd, parsePnpmPackages(yaml))) rootSet.add(r);
+      const yaml = await readFile(join(cwd, "pnpm-workspace.yaml"), "utf8");
+      for (const r of await expandGlobs(cwd, parsePnpmPackages(yaml)))
+        rootSet.add(r);
     } catch (err) {
       warnings.push(`Failed to read pnpm-workspace.yaml: ${errMsg(err)}`);
     }
@@ -161,10 +199,14 @@ export async function scanWorkspace(cwdInput: string): Promise<ScanResult> {
 
   let rootManifest: PackageManifest | null = null;
   if (tooling.packageJson) {
-    const { manifest, valid } = await readManifest(join(cwd, 'package.json'));
+    const { manifest, valid } = await readManifest(join(cwd, "package.json"));
     rootManifest = valid ? manifest : null;
     const ws = manifest.workspaces;
-    const wsPatterns = Array.isArray(ws) ? ws : Array.isArray(ws?.packages) ? ws.packages : null;
+    const wsPatterns = Array.isArray(ws)
+      ? ws
+      : Array.isArray(ws?.packages)
+        ? ws.packages
+        : null;
     if (wsPatterns) {
       for (const r of await expandGlobs(cwd, wsPatterns)) rootSet.add(r);
     }
@@ -180,7 +222,8 @@ export async function scanWorkspace(cwdInput: string): Promise<ScanResult> {
   }
 
   // Single-package repo: the root itself is the package.
-  const isWorkspaceRoot = tooling.pnpmWorkspace || tooling.nx || Boolean(rootManifest?.workspaces);
+  const isWorkspaceRoot =
+    tooling.pnpmWorkspace || tooling.nx || Boolean(rootManifest?.workspaces);
   if (rootSet.size === 0 && tooling.packageJson && !isWorkspaceRoot) {
     rootSet.add(cwd);
   }
@@ -188,7 +231,7 @@ export async function scanWorkspace(cwdInput: string): Promise<ScanResult> {
   // ---- Build PackageInfo for each root (never throw). -----------------------
   const packages: PackageInfo[] = [];
   for (const root of [...rootSet].sort()) {
-    const packageJsonPath = join(root, 'package.json');
+    const packageJsonPath = join(root, "package.json");
     if (!(await exists(packageJsonPath))) continue; // nx project.json without package.json
     const { manifest, valid, warning } = await readManifest(packageJsonPath);
     const pkgWarnings = warning ? [warning] : [];
@@ -204,7 +247,8 @@ export async function scanWorkspace(cwdInput: string): Promise<ScanResult> {
     );
   }
 
-  if (packages.length === 0) warnings.push('No packages discovered in this workspace.');
+  if (packages.length === 0)
+    warnings.push("No packages discovered in this workspace.");
 
   const workspace: WorkspaceInfo = {
     root: cwd,

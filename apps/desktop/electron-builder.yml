@@ -1,0 +1,60 @@
+# electron-builder configuration — produces cross-platform installers.
+# Version + productName are read from package.json (single source of truth).
+appId: dev.packageworkbench.app
+productName: Package Workbench
+copyright: Copyright © Package Workbench contributors
+
+directories:
+  output: release
+  buildResources: build
+
+# electron-vite emits to out/; package that plus the manifest.
+files:
+  - out/**/*
+  - package.json
+
+# Bundle the example workspaces so "Try Example Repo" works in a packaged app.
+extraResources:
+  - from: ../../examples
+    to: examples
+    filter:
+      - '**/*'
+      - '!**/node_modules/**'
+
+asar: true
+npmRebuild: false
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: Package Workbench
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+    - target: zip
+      arch: [x64, arm64]
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+linux:
+  category: Development
+  maintainer: Package Workbench contributors
+  target:
+    - AppImage
+    - deb
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+# Used only by `pnpm release` (CI). Local `pnpm package` never publishes.
+publish:
+  provider: github

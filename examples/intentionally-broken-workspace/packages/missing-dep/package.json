@@ -1,0 +1,1 @@
+{ "name": "@broken/missing-dep", "version": "1.0.0", "type": "module", "main": "./index.js", "dependencies": { "left-pad-that-does-not-exist": "^1.0.0" } }

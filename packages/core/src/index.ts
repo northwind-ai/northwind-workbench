@@ -6,15 +6,54 @@
  */
 
 // Re-export the SDK so consumers have a single import for the whole domain.
-export * from '@package-workbench/plugin-sdk';
+export * from "@package-workbench/plugin-sdk";
 
-export * from './types';
-export { CheckId } from './check-ids';
-export * from './runner';
-export { PluginHost } from './registry';
-export { createNodeContext, createConsoleLogger } from './context';
-export { computeScore, computeConfidence, computeStatus, buildReport, summarize } from './scoring';
-export { scanWorkspace, type ScanResult } from './scanner';
+export * from "./types";
+export { CheckId } from "./check-ids";
+export * from "./runner";
+export { PluginHost } from "./registry";
+export { createNodeContext, createConsoleLogger } from "./context";
+export {
+  computeScore,
+  computeConfidence,
+  computeStatus,
+  buildReport,
+  summarize,
+} from "./scoring";
+export { scanWorkspace, type ScanResult } from "./scanner";
+export * from "./runtime";
+export * from "./scenarios";
+export * from "./graph";
+export * from "./history";
+export * from "./engine";
+export * from "./ai";
+export * from "./pr";
+export * from "./intel";
+export * from "./refactor";
+export * from "./fix";
+// Workspace adapters. Exported selectively because the adapter *interface* shares
+// the name `WorkspaceAdapter` with the SDK's plugin-facing adapter — the new
+// detection adapter is surfaced here as `WorkspaceFlavorAdapter`.
+export {
+  detectAll,
+  detectWorkspaceStack,
+  scanWithAdapters,
+  explainStack,
+  workspaceAdapters,
+  parseTurboConfig,
+  classifyTurboPackage,
+  classifyPackages,
+} from "./adapters";
+export type {
+  AdapterId,
+  WorkspaceCapability,
+  WorkspaceDetectionResult,
+  WorkspaceScanResult,
+  WorkspaceStack,
+  TurboPackageClass,
+  TurboConfig,
+  WorkspaceAdapter as WorkspaceFlavorAdapter,
+} from "./adapters";
 export {
   builtinChecks,
   packageJsonValid,
@@ -25,6 +64,17 @@ export {
   missingPeerDependencies,
   requiredScriptsPresent,
   dependencyVersionShape,
-  importCheck,
-} from './checks';
-export { createMockRun } from './mock-runner';
+  moduleResolutionCheck,
+  exportsMapCheck,
+  browserCompatibilityCheck,
+  runtimeImportCheck,
+  scenarioRunnerCheck,
+} from "./checks";
+export {
+  builtinPlugins,
+  typescriptPlugin,
+  loadWorkspacePlugins,
+  type LoadedPlugins,
+  type PluginLoadError,
+} from "./plugins";
+export { createMockRun } from "./mock-runner";
