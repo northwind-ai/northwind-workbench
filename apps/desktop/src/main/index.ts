@@ -72,6 +72,9 @@ import {
 // Currently loaded workspace. `null` => serve mock data (no worker spawned).
 let currentCwd: string | null = null;
 let cache: WorkbenchRun = createMockRun();
+// The main window — used as the parent for native dialogs so they reliably
+// surface (a parent-less dialog can open behind the window on Windows).
+let mainWindow: BrowserWindow | null = null;
 // AI Codebase Chat: knowledge is gathered lazily on first question and cached;
 // the session carries conversational focus for follow-ups. Both reset on scan.
 let chatKnowledge: WorkbenchKnowledge | null = null;
@@ -248,10 +251,20 @@ function registerIpc(): void {
   ipcMain.handle(Channels.getInitialRun, async () => cache);
 
   ipcMain.handle(Channels.openWorkspace, async () => {
-    const result = await dialog.showOpenDialog({
+    logger.info("openWorkspace: opening folder picker");
+    const parent = mainWindow ?? BrowserWindow.getFocusedWindow();
+    const options = {
       title: "Open workspace",
-      properties: ["openDirectory"],
-    });
+      properties: ["openDirectory" as const],
+    };
+    // Pass the parent window so the dialog is owned by the app and reliably
+    // surfaces on Windows (a parent-less dialog can open behind the window).
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    logger.info(
+      `openWorkspace: dialog ${result.canceled ? "canceled" : `selected ${result.filePaths[0]}`}`,
+    );
     if (result.canceled || result.filePaths.length === 0) return null;
     return scan(result.filePaths[0]!);
   });
@@ -600,6 +613,10 @@ function createWindow(): void {
       nodeIntegration: false,
       sandbox: true,
     },
+  });
+  mainWindow = win;
+  win.on("closed", () => {
+    if (mainWindow === win) mainWindow = null;
   });
 
   // Recover from a renderer crash instead of leaving a blank window.

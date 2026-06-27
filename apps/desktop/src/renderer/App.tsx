@@ -210,10 +210,15 @@ export function App() {
     [loadRun],
   );
 
-  const openRepository = useCallback(
-    () => withScan(() => window.workbench.openWorkspace()),
-    [withScan],
-  );
+  const openRepository = useCallback(() => {
+    // Diagnostic: confirm the click reaches here and the preload bridge exists.
+    console.info("[pw] Open Repository clicked; bridge:", Boolean(window.workbench?.openWorkspace));
+    if (!window.workbench?.openWorkspace) {
+      setStatus("Preload bridge unavailable — restart the app (window.workbench is missing).");
+      return;
+    }
+    return withScan(() => window.workbench.openWorkspace());
+  }, [withScan]);
   const tryExample = useCallback(
     () => withScan(() => window.workbench.openExample()),
     [withScan],
